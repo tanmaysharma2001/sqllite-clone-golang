@@ -78,7 +78,9 @@ func (table *Table) executeInsert(statement *Statement) ExecuteResult {
 	} else {
 		rowToInsert := &statement.rowToInsert
 
-		currentPage, currentRow := table.rowSlot(table.numRows)
+		cursor := table.table_end()
+
+		currentPage, currentRow := table.cursorValue(cursor)
 
 		table.serializeRow(rowToInsert, currentPage, currentRow)
 
@@ -87,9 +89,13 @@ func (table *Table) executeInsert(statement *Statement) ExecuteResult {
 }
 
 func (table *Table) executeSelect(statement *Statement) ExecuteResult {
-	for i := 0; i < table.numRows; i++ {
-		row := table.deserializeRow(table.rowSlot(i))
+
+	cursor := table.table_start()
+
+	for !cursor.end_of_table {
+		row := table.deserializeRow(table.cursorValue(cursor))
 		printRow(row)
+		cursor.advance()
 	}
 	return EXECUTE_SUCCESS
 }

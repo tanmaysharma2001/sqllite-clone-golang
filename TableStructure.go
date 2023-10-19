@@ -9,7 +9,7 @@ import (
 )
 
 // Row Definition: will change later according to tables
-
+const COLUMN_ID_SIZE = 4
 const COLUMN_USERNAME_SIZE = 32
 const COLUMN_EMAIL_SIZE = 255
 
@@ -24,7 +24,7 @@ const (
 	USERNAME_SIZE = int(unsafe.Sizeof(Row{}.username))
 	EMAIL_SIZE    = int(unsafe.Sizeof(Row{}.email))
 
-	ROW_SIZE = ID_SIZE + COLUMN_USERNAME_SIZE + COLUMN_EMAIL_SIZE + 2
+	ROW_SIZE = COLUMN_ID_SIZE + COLUMN_USERNAME_SIZE + COLUMN_EMAIL_SIZE + 2
 )
 
 // !IMPORTANT!: table composition characteristics
@@ -198,23 +198,23 @@ func pager_flush(pager *Pager, page_num int, PAGE_SIZE int) {
 
 }
 
-func (table *Table) rowSlot(numRows int) (int, int) {
-	pageNum := numRows / ROWS_PER_PAGE
-	currentPage := table.getPage(pageNum)
+func (table *Table) cursorValue(cursor *Cursor) (int, int) {
+	rowNum := cursor.row_num
+	pageNum := rowNum / ROWS_PER_PAGE
+	currentPage := cursor.table.getPage(pageNum)
 
 	if currentPage == nil {
 		fmt.Println("Something went wrong!")
 		os.Exit(0)
 	}
 
-	rowOffset := numRows % ROWS_PER_PAGE
+	rowOffset := rowNum % ROWS_PER_PAGE
 	return pageNum, rowOffset
 }
 
 func (table *Table) serializeRow(row *Row, currentPage int, currentRow int) {
 	page := table.pager.pages[currentPage]
 	current_row_index := currentRow * ROW_SIZE
-	fmt.Printf("Current Page: %v and Current Row: %v\n", currentPage, currentRow)
 	data := make([]byte, ROW_SIZE)
 	binary.LittleEndian.PutUint32(data[:4], uint32(row.id))
 	copy(data[4:4+COLUMN_USERNAME_SIZE+1], []byte(row.username))
